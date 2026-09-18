@@ -1,3 +1,132 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+	--ink: #172033;
+	--muted: #667085;
+	--line: #e5e7eb;
+	--surface: #ffffff;
+	--wash: #f6f7fb;
+	--accent: #e65f4d;
+	--accent-dark: #c9493b;
+	--mint: #d9f1e7;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	margin: 0;
+	background: var(--wash);
+	color: var(--ink);
+	font-family: Georgia, 'Times New Roman', serif;
+}
+
+button,
+input,
+select {
+	font-family: inherit;
+}
+
+.site-header {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	background: rgba(255, 255, 255, 0.94);
+	backdrop-filter: blur(12px);
+	border-bottom: 1px solid var(--line);
+}
+
+.brand-mark {
+	color: var(--ink);
+	letter-spacing: -0.04em;
+}
+
+.nav-link {
+	color: var(--ink);
+	transition: color 160ms ease;
+}
+
+.nav-link:hover {
+	color: var(--accent);
+}
+
+.filter-panel {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	box-shadow: 0 12px 30px rgba(23, 32, 51, 0.06);
+}
+
+.filter-control {
+	background: #fbfcfe;
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+.filter-submit,
+.search-submit {
+	background: var(--ink);
+	transition: background 160ms ease, transform 160ms ease;
+}
+
+.filter-submit:hover,
+.search-submit:hover {
+	background: var(--accent);
+	transform: translateY(-1px);
+}
+
+.search-field {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	box-shadow: 0 8px 20px rgba(23, 32, 51, 0.04);
+}
+
+.product-card {
+	background: var(--surface);
+	border-color: var(--line);
+	box-shadow: 0 10px 24px rgba(23, 32, 51, 0.06);
+	transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.product-card:hover {
+	box-shadow: 0 18px 34px rgba(23, 32, 51, 0.12);
+	transform: translateY(-4px);
+}
+
+.product-image {
+	background: #fbfcfe;
+}
+
+.product-title {
+	color: var(--ink);
+	font-size: 1.05rem;
+	line-height: 1.35;
+}
+
+.product-category {
+	color: var(--muted);
+	text-transform: capitalize;
+}
+
+.rating-pill {
+	background: var(--mint);
+	color: var(--ink);
+}
+
+iframe[src*="plug-platform.devrev.ai"] {
+	z-index: 2147483647 !important;
+}
+
+iframe[src*="plug-platform.devrev.ai/launcher"] {
+	position: fixed !important;
+	right: 24px !important;
+	bottom: 24px !important;
+	left: auto !important;
+	top: auto !important;
+	width: 48px !important;
+	height: 48px !important;
+	display: block !important;
+}

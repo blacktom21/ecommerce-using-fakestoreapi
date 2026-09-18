@@ -10,17 +10,17 @@ export default function Header() {
   const { isLoggedIn } = useContext(userContext);
 
   return (
-    <div className="bg-gradient-to-r from-gray-400 to-gray-200 dark:from-gray-800 dark:to-gray-700 border-b border-gray-300 p-2 flex flex-col lg:flex-row lg:justify-between transition-all duration-300 lg:h-[8vh]">
+    <div className="site-header p-4 flex flex-col lg:flex-row lg:justify-between transition-all duration-300 lg:min-h-[8vh]">
 
       <div className="flex justify-between items-center">
-        <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+        <div className="brand-mark text-3xl font-bold">
           VirtuCart
         </div>
 
         {/* Toggle Button for Mobile View */}
         <button
           onClick={() => setShowLinks(!showLinks)}
-          className="lg:hidden focus:outline-none text-blue-500 dark:text-blue-300 hover:text-blue-700"
+          className="lg:hidden focus:outline-none text-sm font-bold text-gray-600 hover:text-red-500"
         >
           {showLinks ? 'Close' : 'Menu'}
         </button>
@@ -28,20 +28,20 @@ export default function Header() {
 
       {/* Responsive Navigation Links */}
       <ul className={`lg:flex lg:flex-row items-center font-semibold text-lg ${showLinks ? 'block' : 'hidden'}`}>
-        <li className="mb-2 lg:mb-0 lg:mr-4">
-          <Link to='/' className="text-blue-500 dark:text-blue-300 hover:text-blue-700">Home</Link>
+        <li className="mb-2 lg:mb-0 lg:mr-6">
+          <Link to='/' className="nav-link">Home</Link>
         </li>
-        <li className="mb-2 lg:mb-0 lg:mr-4">
-          <Link to='/cart' className="text-blue-500 dark:text-blue-300 hover:text-blue-700">Cart</Link>
+        <li className="mb-2 lg:mb-0 lg:mr-6">
+          <Link to='/cart' className="nav-link">Cart</Link>
         </li> 
-        <li className="mb-2 lg:mb-0 lg:mr-4">
-          <Link to='/wishlist' className="text-blue-500 dark:text-blue-300 hover:text-blue-700">Wishlist</Link>
+        <li className="mb-2 lg:mb-0 lg:mr-6">
+          <Link to='/wishlist' className="nav-link">Wishlist</Link>
         </li>
 
         {(isLoggedIn === 'false' || !isLoggedIn || isLoggedIn == null || isLoggedIn == 'null') ?
 
           <li>
-            <Link to='/login' className="text-blue-500 dark:text-blue-300 hover:text-blue-700">Login</Link>
+            <Link to='/login' className="nav-link">Login</Link>
           </li>
 
           :

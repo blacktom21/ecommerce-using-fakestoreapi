@@ -25,16 +25,16 @@ export default function Filter({ data, handleFilter }) {
   };
 
   return (
-    <div className="bg-gray-200 dark:bg-gray-800 mb-14 rounded-md shadow-md flex justify-center items-end">
+    <div className="filter-panel max-w-6xl mx-auto mb-10 p-5 rounded-xl flex flex-wrap justify-center lg:justify-between items-end gap-3">
       <div className="mb-4 mx-5">
-        <label htmlFor="category" className="block text-gray-700 dark:text-gray-300 font-bold mb-2 w-1/4">
+        <label htmlFor="category" className="block text-gray-700 font-bold mb-2">
           Category
         </label>
         <select
           id="category"
           value={cate}
           onChange={(e) => setCate(e.target.value)}
-          className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-md"
+          className="filter-control p-3 w-full border rounded-lg"
         >
           {categoryList.map((cat, index) => (
             <option value={cat} key={index}>
@@ -51,7 +51,7 @@ export default function Filter({ data, handleFilter }) {
           id="price"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-md"
+          className="filter-control p-3 w-full border rounded-lg"
         >
           <option value="All">All</option>
           <option value="10">0-10</option>
@@ -67,7 +67,7 @@ export default function Filter({ data, handleFilter }) {
           id="rating"
           value={rating}
           onChange={(e) => setRating(e.target.value)}
-          className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-md"
+          className="filter-control p-3 w-full border rounded-lg"
         >
           <option value="All">All</option>
           <option value="1">1</option>
@@ -80,7 +80,7 @@ export default function Filter({ data, handleFilter }) {
       <div className="mb-4 mx-5">
         <button
           onClick={handleSubmit}
-          className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+            className="filter-submit text-white font-bold py-3 px-6 rounded-lg"
         >
           Submit
         </button>

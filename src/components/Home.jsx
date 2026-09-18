@@ -82,21 +82,21 @@ export default function Home() {
   }
 
   return (
-    <div className='pb-10 dark:bg-gray-800'>
+    <div className='pb-10 bg-[#f6f7fb]'>
       <HeaderCarousel/>
       <Filter data={data} handleFilter={handleFilter}/>
-      <form className="mb-14 flex justify-center" onSubmit={handleSubmit}>
+      <form className="mb-12 flex justify-center" onSubmit={handleSubmit}>
         <div className="flex items-center">
           <input
             type="text"
             placeholder="Search products..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 w-64 mr-2"
+            className="search-field p-3 w-64 mr-2 rounded-lg"
           />
           <button
             type="submit"
-            className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded dark:bg-gray-600"
+            className="search-submit text-white font-bold py-3 px-5 rounded-lg"
           >
             Search
           </button>
@@ -105,7 +105,7 @@ export default function Home() {
       {filterData && filterData.length === 0 ? (
         <h1 className="text-gray-900 dark:text-gray-300 animate-bounce text-2xl font-bold text-center ">No data found.</h1>
       ) : (
-        <div className="container flex flex-wrap justify-center mx-auto">
+        <div className="container flex flex-wrap justify-center mx-auto px-3">
           {filterData.map((currdata, index) => (
             <ShowProduct data={currdata} key={currdata.id} />
           ))}

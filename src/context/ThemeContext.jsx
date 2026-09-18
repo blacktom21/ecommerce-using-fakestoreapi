@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState } from 'react'
+import { createContext, useState } from 'react'
 
 
 export const themeContext = createContext(null);
@@ -11,14 +11,10 @@ export default function ThemeContext({children}) {
     }else{
       localTheme = true;
     }
-    console.log('localtheme', localTheme);
     const [darkMode, setDarkMode] = useState(localTheme);
-    console.log(darkMode);
     const toggleTheme =   ()=>{
-        // console.log('toggle theme clicked', darkMode);
         localStorage.setItem('darkmode',!darkMode);
         setDarkMode(!darkMode);
-        // console.log('toggle theme clicked', darkMode);
     }
 
   return (

@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 
 const ShowProduct = ({ data }) => {
   return (
-    <div className="max-w-sm w-sm w-[250px] lg:w-[325px] rounded overflow-hidden shadow-lg mb-5 mx-8 border border-gray-200 hover:scale-105 duration-150 hover:shadow-2xl dark:border-gray-700">
+    <div className="product-card max-w-sm w-[250px] lg:w-[300px] rounded-xl overflow-hidden mb-8 mx-3 border">
 
       <Link to={`/productdetails/${data.id}`}>
         <div className="w-full flex justify-center">
           <img
-            className="w-full p-2 lg:p-0  lg:w-full  aspect-[1] bg-blend-multiply"
+            className="product-image w-full p-5 lg:p-7 aspect-[1] object-contain"
             // className="w-full h-60 object-cover"
 
             src={data.image}
@@ -17,23 +17,23 @@ const ShowProduct = ({ data }) => {
         </div>
       </Link>
 
-      <div className="px-6 py-2 dark:bg-gray-800">
-        <div className="font-bold text-xl text-gray-800 dark:text-white">
+      <div className="px-6 py-3">
+        <div className="product-title font-bold">
           {data.title}
         </div>
-        <p className="text-gray-700 text-base dark:text-gray-300">
+        <p className="product-category text-sm mt-2">
           {data.category}
         </p>
-        <div className="font-bold text-md text-gray-800 dark:text-white">
+        <div className="font-bold text-lg mt-3 text-gray-900">
           $ {data.price}
         </div>
       </div>
 
-      <div className="px-6 py-2 dark:bg-gray-800">
-        <span className="inline-block bg-gray-200 dark:bg-gray-700 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 dark:text-white mr-2">
+      <div className="px-6 pb-5 pt-1 flex gap-2 flex-wrap">
+        <span className="rating-pill inline-block rounded-full px-3 py-1 text-xs font-semibold">
           {data.rating.rate} ⭐
         </span>
-        <span className="inline-block bg-gray-200 dark:bg-gray-700 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 dark:text-white mr-2">
+        <span className="inline-block bg-gray-100 rounded-full px-3 py-1 text-xs font-semibold text-gray-600">
           {data.rating.count} Ratings
         </span>
       </div>
