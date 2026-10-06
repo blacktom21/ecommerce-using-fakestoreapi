@@ -1,64 +1,35 @@
-import { createSlice, current } from "@reduxjs/toolkit";
+import { createSlice } from '@reduxjs/toolkit';
+
+function getInitialItems() {
+  try {
+    const items = JSON.parse(localStorage.getItem('secureCartItems') || '[]');
+    return Array.isArray(items) ? items.filter((item) => item?.id && Number(item.quantity) > 0) : [];
+  } catch {
+    return [];
+  }
+}
 
 const cartSlice = createSlice({
-    name: 'cart',
-    initialState: {
-        items: [],
+  name: 'cart',
+  initialState: { items: getInitialItems() },
+  reducers: {
+    addToCart: (state, action) => {
+      const existing = state.items.find((item) => item.id === action.payload.id);
+      if (existing) existing.quantity += 1;
+      else state.items.push({ ...action.payload, quantity: 1 });
     },
-    reducers: {
-        addToCart: (state,action)=>{// check for already added data
-            let currentUser = JSON.parse(atob(localStorage.getItem('currentUser')))
-            // console.log('currentuser from localstoragne',currentUser);
-            // console.log('payload data',action.payload);
-            
-            // check for already added data
-            const isPresent =  state.items.filter((item)=>item.id === action.payload.id && currentUser.id === item.userId);
-            // console.log('ispresent', isPresent);
-            // console.log('addto cart called form slice',action.payload);
-            
-            if(isPresent.length == 0){
-                const combined = {
-                    ...action.payload,
-                    userId: currentUser.id
-                }
-                console.log('combined data',combined)
+    updateQuantity: (state, action) => {
+      const item = state.items.find((product) => product.id === action.payload.id);
+      if (item) item.quantity = Math.max(1, action.payload.quantity);
+    },
+    removeFromCart: (state, action) => {
+      state.items = state.items.filter((item) => item.id !== action.payload);
+    },
+    clearCart: (state) => {
+      state.items = [];
+    },
+  },
+});
 
-                state.items.push(combined)
-                // alert('Added to Cart');
-                swal("Congratulations!", "Item added to cart", "success")
-
-            }
-            else{
-                // alert("Already added to cart");
-                swal("Sorry!", "Item already added to cart", "error")
-
-            }
-        },
-        clearCart: (state, action)=>{
-            // console.log('clear cart called from slice')
-            // state.items = []
-
-
-            let currentUser = JSON.parse(atob(localStorage.getItem('currentUser')))
-
-            // const othersData = current(state.items.filter((item) => item.userId !== currentUser.id))
-            let othersData = [];
-            for(let i=0;i<state.items.length;i++){
-
-                let curr = current(state.items[i]);
-                
-                console.log('current data',curr);
-                if(curr.userId !== currentUser.id)
-                    othersData.push(curr);
-            }
-            console.log('other data', (othersData))
-            console.log('clear cart called from slice')
-            state.items = othersData
-
-        }
-    }
-
-})
-
-export const {addToCart, clearCart} = cartSlice.actions;
+export const { addToCart, updateQuantity, removeFromCart, clearCart } = cartSlice.actions;
 export default cartSlice.reducer;

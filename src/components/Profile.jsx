@@ -1,62 +1,54 @@
-import React, { useContext } from 'react';
-import { userContext } from '../context/UserContext';
-import { useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { userContext } from '../context/user-context';
 
-const Profile = () => {
+function readOrders() {
+  try {
+    const orders = JSON.parse(localStorage.getItem('secureCartOrders') || '[]');
+    return Array.isArray(orders) ? orders : [];
+  } catch {
+    return [];
+  }
+}
 
-    
-    const {logout} = useContext(userContext);
-    const storageData = localStorage.getItem('currentUser');
-    console.log('',storageData);
-    if(storageData == 'null' || storageData == undefined){
-        return(
-            <h1>No SignIn user to go login</h1>
-        )
-    }
-    const user = JSON.parse(atob(storageData));
-    console.log(user);
+const money = (value) => `$${Number(value).toFixed(2)}`;
 
-    const navigate = useNavigate();
+export default function Profile() {
+  const { currentUser, isLoggedIn, logout } = useContext(userContext);
+  const location = useLocation();
+  const navigate = useNavigate();
+  if (!isLoggedIn) return <div className="page-container"><div className="empty-state"><h2>Your account is waiting.</h2><p>Sign in to see your orders and account details.</p><Link to="/login" className="primary-button">Sign in</Link></div></div>;
 
-    const handleLogout = ()=>{
-        logout();
-        navigate('/login');
-    }
-    
-    return (
-        <div className="dark:bg-gray-900 h-[92vh] py-16">
-            
-        <div className="max-w-lg mx-auto bg-white p-8 rounded shadow-md mb-8 animate-fade-in dark:bg-gray-800 dark:text-white">
-          <h2 className="text-2xl font-bold mb-4 capitalize">{`${user.name.firstname} ${user.name.lastname}`}</h2>
-          <p className="text-gray-600 mb-4">{user.email}</p>
-      
-          <div className="mb-4">
-            <h3 className="text-xl font-bold mb-2">Address</h3>
-            <p>{`${user.address.number} ${user.address.street}, ${user.address.city}, ${user.address.zipcode}`}</p>
-          </div>
-      
-          <div className="mb-4">
-            <h3 className="text-xl font-bold mb-2">Contact</h3>
-            <p>{`Phone: ${user.phone}`}</p>
-          </div>
-      
-          <div className="mb-4">
-            <h3 className="text-xl font-bold mb-2">Geolocation</h3>
-            <p>{`Latitude: ${user.address.geolocation.lat}, Longitude: ${user.address.geolocation.long}`}</p>
-          </div>
-      
-          <div className="flex justify-around">
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 focus:outline-none">
-              Logout
-            </button>
-          </div>
-        </div>
-        
-        </div>
-      );
-      
-};
+  const orders = readOrders().filter((order) => order.userId === currentUser.id);
+  const fullName = currentUser.username || [currentUser.name?.firstname, currentUser.name?.lastname].filter(Boolean).join(' ') || 'SecureCart shopper';
+  const initial = fullName.charAt(0).toUpperCase();
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
-export default Profile;
+  return (
+    <div className="page-container">
+      <span className="eyebrow">Your SecureCart</span><h1 className="page-title">Hello, {fullName.split(' ')[0]}.</h1>
+      {location.state?.orderPlaced && <div className="payment-demo" role="status" style={{ marginBottom: 20 }}><span>✓</span><div><strong>Your order is confirmed.</strong><br />Order {location.state.orderPlaced} has been saved in your order history.</div></div>}
+      <div className="account-layout">
+        <aside className="account-card">
+          <div className="account-avatar">{initial}</div><h2>{fullName}</h2><p>{currentUser.email}</p><p>Your demo account and order history are stored in this browser.</p>
+          <button className="secondary-button" type="button" onClick={handleLogout}>Sign out</button>
+        </aside>
+        <section>
+          <h2 style={{ margin: '5px 0 14px', fontFamily: 'Manrope, sans-serif' }}>Your orders <span className="cart-item-category">({orders.length})</span></h2>
+          {orders.length === 0
+            ? <div className="account-card"><p>You haven’t placed an order yet. Your next favourite is waiting.</p><Link to="/#shop" className="text-button">Explore the shop →</Link></div>
+            : orders.map((order) => (
+              <article className="order-card" key={order.id}>
+                <div className="order-head"><div><strong>Order {order.id}</strong><div className="order-products">{new Date(order.createdAt).toLocaleDateString()} · {order.status}</div></div><strong>{money(order.total)}</strong></div>
+                <div className="order-products">{order.items.map((item) => `${item.title} × ${item.quantity}`).join(' · ')}</div>
+                <div className="order-products">Payment: {order.paymentStatus}</div>
+              </article>
+            ))}
+        </section>
+      </div>
+    </div>
+  );
+}

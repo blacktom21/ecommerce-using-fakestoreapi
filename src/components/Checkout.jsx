@@ -1,141 +1,117 @@
-import React from 'react';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import { useContext, useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { userContext } from '../context/user-context';
+import { clearCart } from '../redux/cartSlice';
 
+const initialShipping = { name: '', email: '', address: '', city: '', postalCode: '' };
+const money = (value) => `$${value.toFixed(2)}`;
 
 export default function Checkout() {
-    
-
-  const formik = useFormik({
-    initialValues: {
-      cardNumber: '',
-      expiration: '',
-      cvv: '',
-      name: '',
-    },
-    validationSchema: Yup.object({
-      cardNumber: Yup.string().required('Card number is required'),
-      expiration: Yup.date().required('Expiration date is required'),
-      cvv: Yup.string().required('CVV is required'),
-      name: Yup.string().required('Cardholder name is required'),
-    }),
-    onSubmit: ()=>{
-      swal("Payment Successful!", "This is dummy payment gateway!", "success")
-      formik.resetForm()
-    } ,
+  const { isLoggedIn, currentUser } = useContext(userContext);
+  const items = useSelector((state) => state.cart.items);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [shippingDetails, setShippingDetails] = useState({
+    ...initialShipping,
+    name: currentUser.username || [currentUser.name?.firstname, currentUser.name?.lastname].filter(Boolean).join(' '),
+    email: currentUser.email || '',
   });
+  const [paymentMethod, setPaymentMethod] = useState('demo');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+  const shipping = subtotal >= 50 ? 0 : 5.99;
+  const total = subtotal + shipping;
+
+  if (items.length === 0) return <Navigate to="/cart" replace />;
+  if (!isLoggedIn) {
+    return <div className="page-container"><div className="empty-state"><span className="eyebrow">Almost there</span><h2>Sign in to finish your order.</h2><p>Your cart will be right here when you get back.</p><Link to="/login" state={{ from: '/checkout' }} className="primary-button">Sign in to continue</Link></div></div>;
+  }
+  const updateField = (event) => {
+    const { name, value } = event.target;
+    setShippingDetails((details) => ({ ...details, [name]: value }));
+  };
+
+  const placeOrder = (event) => {
+    event.preventDefault();
+    const missingField = Object.entries(shippingDetails).find(([, value]) => !value.trim());
+    if (missingField) {
+      setError('Please complete every delivery detail before placing your order.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingDetails.email)) {
+      setError('Enter a valid email address for order updates.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    const order = {
+      id: `SC-${Date.now().toString(36).toUpperCase()}`,
+      userId: currentUser.id,
+      createdAt: new Date().toISOString(),
+      status: 'Confirmed',
+      items: items.map(({ id, title, image, price, quantity }) => ({ id, title, image, price, quantity })),
+      shippingDetails,
+      subtotal,
+      shipping,
+      total,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'demo' ? 'Demo payment simulated' : 'Pay on delivery',
+    };
+
+    try {
+      const storedOrders = JSON.parse(localStorage.getItem('secureCartOrders') || '[]');
+      if (!Array.isArray(storedOrders)) throw new Error('Saved order history is invalid.');
+      localStorage.setItem('secureCartOrders', JSON.stringify([order, ...storedOrders]));
+      dispatch(clearCart());
+      navigate('/profile', { state: { orderPlaced: order.id } });
+    } catch {
+      setSubmitting(false);
+      setError('We couldn’t save your order on this device. Please try again.');
+    }
+  };
 
   return (
-    <div className="pt-8 w-full dark:bg-gray-900">
-      <div className="w-full px-3 lg:w-1/2 mx-auto h-[87vh]">
-        <h1 className="dark:text-white text-gray-800 text-3xl font-bold mb-4">Payment Form</h1>
-
-
-        <form
-          className="bg-white dark:bg-gray-800 p-8 rounded-md shadow-md mb-4"
-          onSubmit={formik.handleSubmit}
-        >
-          <div className="mb-4">
-            <label htmlFor="cardNumber" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-              Card Number
-            </label>
-            <input
-              type="number"
-              id="cardNumber"
-              name="cardNumber"
-              className={`p-2 w-full border ${
-                formik.touched.cardNumber && formik.errors.cardNumber
-                  ? 'border-red-500'
-                  : 'border-gray-300 dark:border-gray-600'
-              } rounded-md`}
-              placeholder="Enter card number"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.cardNumber}
-            />
-            {formik.touched.cardNumber && formik.errors.cardNumber ? (
-              <p className="text-red-500 text-sm mt-1">{formik.errors.cardNumber}</p>
-            ) : null}
-          </div>
-
-          <div className="mb-4 grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="expiration" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                Expiration Date
-              </label>
-              <input
-                type="month"
-                id="expiration"
-                name="expiration"
-                className={`p-2 w-full border ${
-                  formik.touched.expiration && formik.errors.expiration
-                    ? 'border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                } rounded-md`}
-                placeholder="MM/YY"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.expiration}
-              />
-              {formik.touched.expiration && formik.errors.expiration ? (
-                <p className="text-red-500 text-sm mt-1">{formik.errors.expiration}</p>
-              ) : null}
+    <div className="page-container">
+      <span className="eyebrow">One last step</span><h1 className="page-title">Secure checkout</h1>
+      <form className="checkout-layout" onSubmit={placeOrder}>
+        <div>
+          <section className="checkout-card">
+            <h2>Delivery details</h2>
+            {error && <p className="form-alert" role="alert">{error}</p>}
+            <div className="checkout-fields">
+              {[['name', 'Full name', 'text'], ['email', 'Email for updates', 'email'], ['address', 'Street address', 'text'], ['city', 'City', 'text'], ['postalCode', 'Postal code', 'text']].map(([name, label, type]) => (
+                <div className={`form-field${name === 'address' ? ' full' : ''}`} key={name}>
+                  <label htmlFor={name}>{label}</label>
+                  <input className="form-input" id={name} name={name} type={type} autoComplete={name === 'postalCode' ? 'postal-code' : name} value={shippingDetails[name]} onChange={updateField} required />
+                </div>
+              ))}
             </div>
-            <div>
-              <label htmlFor="cvv" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                CVV
-              </label>
-              <input
-                type="text"
-                id="cvv"
-                name="cvv"
-                className={`p-2 w-full border ${
-                  formik.touched.cvv && formik.errors.cvv ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                } rounded-md`}
-                placeholder="CVV"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.cvv}
-              />
-              {formik.touched.cvv && formik.errors.cvv ? (
-                <p className="text-red-500 text-sm mt-1">{formik.errors.cvv}</p>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="name" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-              Cardholder Name
+          </section>
+          <section className="checkout-card">
+            <h2>Payment</h2>
+            <div className="payment-demo"><span aria-hidden="true">✓</span><div><strong>Demo checkout — no real payment is taken.</strong><br />This prototype does not collect or store card numbers.</div></div>
+            <label className="form-field" style={{ display: 'flex', gap: 9, alignItems: 'center', marginTop: 17, fontSize: 12 }}>
+              <input type="radio" name="paymentMethod" value="demo" checked={paymentMethod === 'demo'} onChange={() => setPaymentMethod('demo')} /> Simulate a demo payment
             </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              className={`p-2 w-full border ${
-                formik.touched.name && formik.errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              } rounded-md`}
-              placeholder="Enter cardholder name"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.name}
-            />
-            {formik.touched.name && formik.errors.name ? (
-              <p className="text-red-500 text-sm mt-1">{formik.errors.name}</p>
-            ) : null}
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Pay Now
-            </button>
-
-
-          </div>
-        </form>
-      </div>
+            <label style={{ display: 'flex', gap: 9, alignItems: 'center', fontSize: 12 }}>
+              <input type="radio" name="paymentMethod" value="delivery" checked={paymentMethod === 'delivery'} onChange={() => setPaymentMethod('delivery')} /> Pay on delivery (demo)
+            </label>
+          </section>
+        </div>
+        <aside className="summary-card">
+          <h2>Your order</h2>
+          {items.map((item) => <div className="summary-line" key={item.id}><span>{item.title} × {item.quantity}</span><strong>{money(Number(item.price) * item.quantity)}</strong></div>)}
+          <div className="summary-line"><span>Subtotal</span><strong>{money(subtotal)}</strong></div>
+          <div className="summary-line"><span>Shipping</span><strong>{shipping === 0 ? 'Free' : money(shipping)}</strong></div>
+          <div className="summary-line summary-total"><span>Total</span><strong>{money(total)}</strong></div>
+          <button className="primary-button" type="submit" disabled={submitting}>{submitting ? 'Placing order…' : 'Place demo order'}</button>
+          <p className="secure-note">Your order is saved on this device for this demo. No charge is made.</p>
+          <Link className="text-button" to="/cart">← Back to cart</Link>
+        </aside>
+      </form>
     </div>
   );
 }

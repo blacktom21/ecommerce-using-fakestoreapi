@@ -1,93 +1,123 @@
-import { createContext, useEffect, useState } from "react";
+import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
+import { userContext } from './user-context';
 
-export const userContext = createContext(null);
+const USERS_KEY = 'secureCartUsers';
 
+function readJson(key, fallback) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || 'null');
+    return value ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-export default function UserContext({ children }) {
-  const storedLogin = localStorage.getItem('login') === 'true';
-  const storedUser = localStorage.getItem('currentUser');
-  const [isLoggedIn, setIsLoggedIn] = useState(storedLogin);
-  const [currentUser, setCurrentUser] = useState(() => {
-    if (!storedUser || storedUser === 'null') return {};
+function readCurrentUser() {
+  const saved = localStorage.getItem('secureCartCurrentUser');
+  if (saved) return readJson('secureCartCurrentUser', {});
+  const oldSaved = localStorage.getItem('currentUser');
+  if (oldSaved && oldSaved !== 'null') {
     try {
-      return JSON.parse(atob(storedUser));
+      const oldUser = JSON.parse(atob(oldSaved));
+      return { id: oldUser.id, username: oldUser.username || oldUser.name?.firstname, email: oldUser.email };
     } catch {
       return {};
     }
-  });
-  const [allUsers, setAllUsers] = useState([]);
+  }
+  return {};
+}
 
-  useEffect(() => {
-    const localUsers = JSON.parse(localStorage.getItem('localUsers') || '[]');
-    fetch('https://fakestoreapi.com/users')
-      .then((res) => res.json())
-      .then((users) => setAllUsers([...users, ...localUsers]))
-      .catch(() => setAllUsers(localUsers));
-  }, []);
+function toBase64(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)));
+}
 
-  const persistLogin = (user) => {
-    setCurrentUser(user);
-    setIsLoggedIn(true);
-    localStorage.setItem('currentUser', btoa(JSON.stringify(user)));
-    localStorage.setItem('login', 'true');
-  };
+function fromBase64(value) {
+  return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
+}
 
-  const login = (values) => {
-    const user = allUsers.find(
-      (item) => item.email.toLowerCase() === values.email.toLowerCase() && item.password === values.password,
-    );
-    if (!user) {
-      swal('Unable to log in', 'The email or password is incorrect.', 'error');
-      return false;
+async function hashPassword(password, salt) {
+  if (!globalThis.crypto?.subtle) throw new Error('Password protection needs a secure browser context (localhost or HTTPS).');
+  const encodedSalt = salt || toBase64(crypto.getRandomValues(new Uint8Array(16)));
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const hash = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: fromBase64(encodedSalt), iterations: 120000, hash: 'SHA-256' }, key, 256);
+  return { salt: encodedSalt, passwordHash: toBase64(hash) };
+}
+
+function getPublicUser(user) {
+  return { id: user.id, username: user.username, email: user.email };
+}
+
+export default function UserContext({ children }) {
+  const [currentUser, setCurrentUser] = useState(readCurrentUser);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(readCurrentUser().id));
+
+  const login = async ({ email, password }) => {
+    const savedUsers = readJson(USERS_KEY, []);
+    const users = Array.isArray(savedUsers) ? savedUsers : [];
+    const user = users.find((item) => item?.email?.toLowerCase() === email.trim().toLowerCase());
+    if (!user) return { success: false, error: 'We couldn’t find an account with that email and password.' };
+
+    try {
+      let valid = false;
+      if (user.passwordHash && user.salt) {
+        valid = (await hashPassword(password, user.salt)).passwordHash === user.passwordHash;
+      } else if (user.password) {
+        valid = user.password === password;
+        if (valid) {
+          const securedPassword = await hashPassword(password);
+          Object.assign(user, securedPassword);
+          delete user.password;
+          localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        }
+      }
+      if (!valid) return { success: false, error: 'We couldn’t find an account with that email and password.' };
+      const publicUser = getPublicUser(user);
+      localStorage.setItem('secureCartCurrentUser', JSON.stringify(publicUser));
+      localStorage.setItem('login', 'true');
+      setCurrentUser(publicUser);
+      setIsLoggedIn(true);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message || 'We couldn’t sign you in. Please try again.' };
     }
-    persistLogin(user);
-    swal('Congratulations!', 'Login Successful', 'success');
-    return true;
   };
 
-  const createAccount = (values) => {
-    const email = values.email.toLowerCase();
-    if (allUsers.some((user) => user.email.toLowerCase() === email)) {
-      swal('Account already exists', 'Try logging in with this email.', 'error');
-      return false;
+  const createAccount = async ({ name, email, password }) => {
+    const savedUsers = readJson(USERS_KEY, []);
+    const users = Array.isArray(savedUsers) ? savedUsers : [];
+    const normalizedEmail = email.trim().toLowerCase();
+    if (users.some((user) => user?.email?.toLowerCase() === normalizedEmail)) {
+      return { success: false, error: 'An account with this email already exists. Please sign in.' };
     }
-    const user = { id: `local-${Date.now()}`, username: values.name, email, password: values.password };
-    const localUsers = JSON.parse(localStorage.getItem('localUsers') || '[]');
-    localStorage.setItem('localUsers', JSON.stringify([...localUsers, user]));
-    setAllUsers((users) => [...users, user]);
-    persistLogin(user);
-    swal('Account created', 'You are now signed in.', 'success');
-    return true;
-  };
 
-  const loginWithGoogle = (profile) => {
-    const existingUser = allUsers.find((user) => user.email.toLowerCase() === profile.email.toLowerCase());
-    const user = existingUser || { id: `google-${profile.sub}`, googleId: profile.sub, username: profile.name, email: profile.email, image: profile.picture };
-    if (!existingUser) {
-      const localUsers = JSON.parse(localStorage.getItem('localUsers') || '[]');
-      localStorage.setItem('localUsers', JSON.stringify([...localUsers, user]));
-      setAllUsers((users) => [...users, user]);
+    try {
+      const securedPassword = await hashPassword(password);
+      const user = { id: `local-${crypto.randomUUID()}`, username: name.trim(), email: normalizedEmail, ...securedPassword };
+      localStorage.setItem(USERS_KEY, JSON.stringify([...users, user]));
+      const publicUser = getPublicUser(user);
+      localStorage.setItem('secureCartCurrentUser', JSON.stringify(publicUser));
+      localStorage.setItem('login', 'true');
+      setCurrentUser(publicUser);
+      setIsLoggedIn(true);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message || 'We couldn’t create your account. Please try again.' };
     }
-    persistLogin(user);
-    swal('Welcome!', 'Google login successful.', 'success');
-    return true;
   };
 
-  const logout = ()=>{
-    localStorage.setItem('currentUser', null);
-    localStorage.setItem('login', false);
+  const logout = () => {
+    localStorage.removeItem('secureCartCurrentUser');
+    localStorage.removeItem('currentUser');
+    localStorage.setItem('login', 'false');
     setCurrentUser({});
     setIsLoggedIn(false);
-  }
+  };
 
-
-  return (
-    <div>
-
-      <userContext.Provider value={{ isLoggedIn, currentUser, setIsLoggedIn, login, createAccount, loginWithGoogle, logout, setAllUsers }}>
-        {children}
-      </userContext.Provider>
-
-    </div>
-  )
+  const value = useMemo(() => ({ isLoggedIn, currentUser, setIsLoggedIn, login, createAccount, logout }), [isLoggedIn, currentUser]);
+  return <userContext.Provider value={value}>{children}</userContext.Provider>;
 }
+
+UserContext.propTypes = {
+  children: PropTypes.node.isRequired,
+};

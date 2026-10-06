@@ -1,11 +1,9 @@
-import { useContext, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
-// import context
+import { useEffect } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Provider, useSelector } from 'react-redux';
 import UserContext from './context/UserContext';
-
-// import components
 import Header from './components/Header';
+import Footer from './components/Footer';
 import Home from './components/Home';
 import Cart from './components/Cart';
 import Login from './components/Login';
@@ -13,75 +11,76 @@ import Signup from './components/Signup';
 import Error from './components/Error';
 import ProductDetails from './components/ProductDetails';
 import Profile from './components/Profile';
-
-// redux setup
-import { Provider } from 'react-redux';
-import Store from './redux/Store';
 import WishList from './components/WishList';
-import { themeContext } from './context/ThemeContext';
 import Checkout from './components/Checkout';
+import AboutPage from './components/AboutPage';
+import Store from './redux/Store';
 
-export default function App() {
-
-  const { darkMode } = useContext(themeContext);
+function CartPersistence() {
+  const items = useSelector((state) => state.cart.items);
+  const wishlistItems = useSelector((state) => state.wishlist.items);
 
   useEffect(() => {
-    const appId = import.meta.env.VITE_DEVREV_APP_ID;
+    localStorage.setItem('secureCartItems', JSON.stringify(items));
+    localStorage.setItem('secureCartWishlist', JSON.stringify(wishlistItems));
+  }, [items, wishlistItems]);
+
+  return null;
+}
+
+export default function App() {
+  useEffect(() => {
+    const appId = import.meta.env.VITE_DEVREV_APP_ID?.trim();
+    if (!appId) return;
+
     const initializePlug = () => {
-      if (!appId || !window.plugSDK || window.__virtucartPlugInitialized) return;
-      window.plugSDK.init({ app_id: appId });
-      window.__virtucartPlugInitialized = true;
+      if (!window.plugSDK || window.__secureCartDevRevInitialized) return;
+      try {
+        window.plugSDK.init({ app_id: appId });
+        window.__secureCartDevRevInitialized = true;
+      } catch (error) {
+        console.error('DevRev Plug initialization failed.', error);
+      }
     };
 
     if (window.plugSDK) {
       initializePlug();
-      return undefined;
+      return;
     }
 
-    const retryTimer = window.setInterval(() => {
-      if (window.plugSDK) {
-        initializePlug();
-        window.clearInterval(retryTimer);
-      }
-    }, 100);
-
-    return () => window.clearInterval(retryTimer);
+    const script = document.createElement('script');
+    script.src = 'https://plug-platform.devrev.ai/static/plug.js';
+    script.async = true;
+    script.onload = initializePlug;
+    script.onerror = () => console.error('DevRev Plug could not be loaded.');
+    document.head.appendChild(script);
   }, []);
 
   return (
-
-      <div className={` ${darkMode && (darkMode == 'true' || darkMode == true) && 'dark'} dark:bg-gray-900`}>
-
-
-        <UserContext>
-          <Provider store={Store}>
-
-
-
-            <BrowserRouter>
-
-              <div>
-                {/* <h1 className="font-bold text-xl">App is working</h1> */}
-                <Header />
-              </div>
-
-
-
+    <UserContext>
+      <Provider store={Store}>
+        <CartPersistence />
+        <BrowserRouter>
+          <div className="app-shell">
+            <Header />
+            <main className="app-main">
               <Routes>
-                <Route path='/' element={<Home />} />
-                <Route path='/cart' element={<Cart />} />
-                <Route path='/wishlist' element={<WishList />} />
-                <Route path='/productdetails/:id' element={<ProductDetails />} />
-                <Route path='/login' element={<Login />} />
-                <Route path='/signup' element={<Signup />} />
-                <Route path='/checkout' element={<Checkout />} />
-                <Route path='/profile' element={<Profile />} />
-                <Route path='*' element={<Error />} />
-
+                <Route path="/" element={<Home />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/wishlist" element={<WishList />} />
+                <Route path="/productdetails/:id" element={<ProductDetails />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="*" element={<Error />} />
               </Routes>
-            </BrowserRouter>
-          </Provider>
-        </UserContext>
-      </div>
-  )
+            </main>
+            <Footer />
+          </div>
+        </BrowserRouter>
+      </Provider>
+    </UserContext>
+  );
 }

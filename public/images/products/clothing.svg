@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" fill="none">
+  <rect width="480" height="480" rx="36" fill="#F7F4EA"/>
+  <circle cx="240" cy="226" r="145" fill="#EEE8D7"/>
+  <path d="m174 146 44-19a59 59 0 0 0 44 0l44 19 53 49-34 39-25-22v113H180V212l-25 22-34-39 53-49Z" fill="#3C7354"/>
+  <path d="M218 128c5 25 39 25 44 0" stroke="#D6E4D1" stroke-width="9"/>
+  <path d="M190 264h100" stroke="#73A580" stroke-width="7" stroke-linecap="round"/>
+  <text x="240" y="411" fill="#52634D" font-family="Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="3" text-anchor="middle">SOFT &amp; EASY</text>
+</svg>

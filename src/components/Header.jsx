@@ -1,60 +1,40 @@
-import React, { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { userContext } from '../context/UserContext';
-import avatar from '/avatar.png';
-import Switcher from './Switcher';
+import { useContext, useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { userContext } from '../context/user-context';
 
 export default function Header() {
-  const [showLinks, setShowLinks] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { isLoggedIn, currentUser } = useContext(userContext);
+  const cartCount = useSelector((state) => state.cart.items.reduce((sum, item) => sum + item.quantity, 0));
 
-  const { isLoggedIn } = useContext(userContext);
+  const closeMenu = () => setMenuOpen(false);
+  const linkClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
 
   return (
-    <div className="site-header p-4 flex flex-col lg:flex-row lg:justify-between transition-all duration-300 lg:min-h-[8vh]">
-
-      <div className="flex justify-between items-center">
-        <div className="brand-mark text-3xl font-bold">
-          VirtuCart
-        </div>
-
-        {/* Toggle Button for Mobile View */}
-        <button
-          onClick={() => setShowLinks(!showLinks)}
-          className="lg:hidden focus:outline-none text-sm font-bold text-gray-600 hover:text-red-500"
-        >
-          {showLinks ? 'Close' : 'Menu'}
-        </button>
-      </div>
-
-      {/* Responsive Navigation Links */}
-      <ul className={`lg:flex lg:flex-row items-center font-semibold text-lg ${showLinks ? 'block' : 'hidden'}`}>
-        <li className="mb-2 lg:mb-0 lg:mr-6">
-          <Link to='/' className="nav-link">Home</Link>
-        </li>
-        <li className="mb-2 lg:mb-0 lg:mr-6">
-          <Link to='/cart' className="nav-link">Cart</Link>
-        </li> 
-        <li className="mb-2 lg:mb-0 lg:mr-6">
-          <Link to='/wishlist' className="nav-link">Wishlist</Link>
-        </li>
-
-        {(isLoggedIn === 'false' || !isLoggedIn || isLoggedIn == null || isLoggedIn == 'null') ?
-
-          <li>
-            <Link to='/login' className="nav-link">Login</Link>
-          </li>
-
-          :
-          <li>
-            <Link to='/profile' className="text-blue-500 dark:text-blue-300 hover:text-blue-700">
-              <img src={avatar} alt="profile" className='rounded-full md:w-1/3 lg:block hidden' />
-              <span className='lg:hidden'>Profile</span>
+    <>
+      <div className="announcement-bar"><span>Thoughtful finds, delivered with care</span><span>Free shipping on orders over $50</span></div>
+      <header className="site-header">
+        <div className="header-inner">
+          <Link to="/" className="brand-mark" onClick={closeMenu} aria-label="SecureCart home">
+            <img src="/images/securecart-logo.png" className="brand-logo" alt="" />secure<span>Cart</span>
+          </Link>
+          <button className="menu-toggle" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-label="Toggle navigation">
+            {menuOpen ? '✕' : '☰'}
+          </button>
+          <nav className={`main-nav${menuOpen ? ' is-open' : ''}`} aria-label="Main navigation">
+            <NavLink to="/" end className={linkClass} onClick={closeMenu}>Discover</NavLink>
+            <a className="nav-link" href="/#shop" onClick={closeMenu}>Shop</a>
+            <NavLink to="/wishlist" className={linkClass} onClick={closeMenu}>Saved</NavLink>
+            {isLoggedIn
+              ? <NavLink to="/profile" className={linkClass} onClick={closeMenu}>{currentUser.username || currentUser.name?.firstname || 'Account'}</NavLink>
+              : <NavLink to="/login" className={linkClass} onClick={closeMenu}>Sign in</NavLink>}
+            <Link to="/cart" className="cart-link" onClick={closeMenu} aria-label={`Cart with ${cartCount} items`}>
+              <span className="cart-icon" aria-hidden="true">♧</span><span>Cart</span><span className="cart-count">{cartCount}</span>
             </Link>
-          </li>
-        }
-        <li className='flex justifys items-center mx-5 my-3'> <Switcher /></li>
-      </ul>
-
-    </div>
+          </nav>
+        </div>
+      </header>
+    </>
   );
 }
