@@ -96,26 +96,12 @@ Light Mode
 
 5. Open your browser and visit [http://localhost:5173](http://localhost:5173) to explore VirtuCart.
 
-## DevRev API Connection
+## Support widget
 
-This app connects to DevRev directly through the REST API and uses the Plug
-widget so customers can open support conversations and raise tickets.
-
-1. Copy `.env.example` to `.env.local`.
-2. Set `DEVREV_TOKEN` to a current DevRev personal or application access token.
-   Do not use a `VITE_` prefix; Vite would expose that value to the browser.
-3. Set `VITE_DEVREV_APP_ID` to the public Unique App ID from DevRev Plug Settings.
-4. Start the app with `npm run dev`.
-
-The Plug widget appears in the bottom-right corner so users can contact support
-and raise tickets. On startup, the app also calls `GET /api/devrev/me`. The Vite
-server forwards that request to `https://api.devrev.ai/dev-users.self` and adds
-the token on the server side.
-
-The token supplied to a chat or checked into source should be revoked and
-replaced. The development proxy in `vite.config.js` is intended for local use;
-production deployments should move the same server-side request into the
-application backend rather than adding the token to the frontend build.
+The DevRev Plug widget lets customers contact support and raise tickets. Set
+`VITE_DEVREV_APP_ID` to the public Unique App ID from DevRev Plug Settings in
+your local `.env.local` and in the Render environment variables. No DevRev API
+token is needed by this frontend.
 
 ## Project Structure
 

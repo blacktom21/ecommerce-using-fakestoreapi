@@ -48,16 +48,6 @@ export default function App() {
     return () => window.clearInterval(retryTimer);
   }, []);
 
-  useEffect(() => {
-    fetch('/api/devrev/me')
-      .then(async (response) => {
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error || 'DevRev connection failed');
-        console.info('Connected to DevRev as', body.dev_user?.display_handle || body.dev_user?.email);
-      })
-      .catch((error) => console.warn('DevRev connection unavailable:', error.message));
-  }, []);
-
   return (
 
       <div className={` ${darkMode && (darkMode == 'true' || darkMode == true) && 'dark'} dark:bg-gray-900`}>
